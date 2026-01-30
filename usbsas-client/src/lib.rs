@@ -118,6 +118,7 @@ pub enum Message {
     UserInput(u8),
     ClearInput(bool),
     Reset,
+    TogglePreserveExisting(bool), // Nouveau message lorsque checkbox est cliqué 
 }
 
 impl Drop for GUI {
@@ -206,6 +207,7 @@ pub struct GUI {
     session_id: String,
     fullscreen: bool,
     socket_path: String,
+    preserve_file: bool,
 }
 
 impl GUI {
@@ -280,6 +282,7 @@ impl GUI {
                 session_id,
                 fullscreen: *matches.get_one::<bool>("fullscreen").unwrap_or(&false),
                 socket_path,
+                preserve_file: false, //Initialisation de la variable booléenne, par défaut formatter
             },
             Task::none(),
         )

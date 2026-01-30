@@ -67,7 +67,7 @@ impl RunningState {
         if let Some(id) = &self.current_id {
             Ok(id.to_string())
         } else {
-            let new_id = String::from("Tartempion");
+            let new_id = String::from("ITD Secure");
             self.current_id = Some(new_id.clone());
             Ok(new_id)
         }

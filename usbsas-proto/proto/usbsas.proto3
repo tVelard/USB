@@ -22,6 +22,7 @@ message RequestInitTransfer {
   uint64 destination = 2;
   optional common.FsType fstype = 3;
   optional string pin = 4;
+    optional bool preserve_files = 5;
 };
 
 message RequestOpenPartition {

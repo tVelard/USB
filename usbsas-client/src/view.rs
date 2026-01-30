@@ -1092,6 +1092,16 @@ impl GUI {
                         .push(
                             PickList::new(FSTYPES, Some(self.fstype), Message::FsTypeSelect)
                                 .text_size(OPT_SIZE),
+                        )
+                        .push(   // rajoute de l'espace dans le menu déroulant
+                            Space::new()
+                                .width(Length::Fixed(20.0))
+                                .height(Length::Fixed(OPT_SIZE)),
+                        )
+                        .push(
+                            Checkbox::new(self.preserve_file)
+                            .on_toggle(Message::TogglePreserveExisting)
+                            .text_size(OPT_SIZE),
                         );
                 };
             };

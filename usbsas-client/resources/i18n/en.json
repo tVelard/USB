@@ -58,5 +58,6 @@
     "sys": "System",
     "tools": "Tools",
     "usbsas": "usbsas",
-    "loading": "Loading"
+    "loading": "Loading",
+    "preserve_file": "Preserve file while transfer"
 }

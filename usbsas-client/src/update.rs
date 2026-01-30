@@ -92,6 +92,7 @@ impl GUI {
             Message::SysInfo => self.state = State::SysInfo,
             Message::LangSelect(lang) => self.lang = lang,
             Message::FsTypeSelect(fstype) => self.fstype = fstype,
+            Message::TogglePreserveExisting(checked) => self.preserve_file = checked, // Réagir au clic 
             Message::Devices => {
                 self.devices = crate::devices_from_proto(
                     comm!(devices, proto::usbsas::RequestDevices { include_alt: true }).devices,
@@ -156,13 +157,14 @@ impl GUI {
                                 return Task::none();
                             }
                         };
-                        comm!(
+                       comm!(
                             inittransfer,
                             proto::usbsas::RequestInitTransfer {
-                                source: src_id,
+                            source: src_id,
                                 destination: dst_id,
                                 fstype: Some(self.fstype.into()),
                                 pin: self.download_pin.clone(),
+                                preserve_files: Some(self.preserve_file), // Transmission de la variable booléenne
                             }
                         );
                         if let Some(Device::Usb(_)) = self.devices.get(&src_id) {

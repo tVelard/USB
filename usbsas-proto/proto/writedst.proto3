@@ -10,6 +10,7 @@ message RequestEnd {
 message RequestInit {
   uint64 dev_size = 2;
   common.FsType fstype = 3;
+  bool preserve_files = 4;
 };
 
 message RequestNewFile {

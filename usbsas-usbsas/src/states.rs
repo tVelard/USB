@@ -367,6 +367,7 @@ impl InitState {
                 analyze,
                 files: TransferFiles::new(),
                 analyze_report: None,
+                preserve_files: req.preserve_files.unwrap_or(false),
             };
 
             let state = match transfer.src {
@@ -942,6 +943,7 @@ impl RunState for WriteDstFileState {
                 children.files2fs.comm.init(proto::writedst::RequestInit {
                     dev_size,
                     fstype: fstype.into(),
+                    preserve_files: self.transfer.preserve_files,
                 })?;
             } else {
                 unreachable!();
@@ -1265,6 +1267,7 @@ impl RunState for WipeState {
         children.files2fs.comm.init(proto::writedst::RequestInit {
             dev_size,
             fstype: self.outfstype.into(),
+            preserve_files: false,
         })?;
         children
             .files2fs

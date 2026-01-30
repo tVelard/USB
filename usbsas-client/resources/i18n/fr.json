@@ -59,5 +59,6 @@
     "sys": "Système",
     "tools": "Outils",
     "usbsas": "sasusb",
-    "loading": "Chargement"
+    "loading": "Chargement",
+    "preserve_file": "Préserver les fichiers de la destination lors du transfert"
 }

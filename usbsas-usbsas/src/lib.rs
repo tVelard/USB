@@ -102,6 +102,7 @@ struct Transfer {
     analyze: bool,
     files: TransferFiles,
     analyze_report: Option<AnalyzeReport>,
+    preserve_files: bool,
 }
 
 impl Transfer {

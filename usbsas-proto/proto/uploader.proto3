@@ -1,0 +1,35 @@
+syntax = "proto3";
+package uploader;
+import public "common.proto3";
+
+/* Requests */
+
+message RequestUpload {
+  string id = 1;
+  common.Network network = 2;
+};
+
+message RequestEnd {
+};
+
+message Request {
+  oneof msg {
+    RequestUpload Upload = 1;
+    RequestEnd End = 2;
+  }
+};
+
+
+/* Response */
+
+message ResponseUpload {
+}
+
+message Response {
+  oneof msg {
+    ResponseUpload Upload = 1;
+    common.ResponseStatus Status = 2;
+    common.ResponseEnd End = 3;
+    common.ResponseError Error = 4;
+  }
+};

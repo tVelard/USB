@@ -1,0 +1,43 @@
+[package]
+name = "usbsas-net"
+version = "0.3.0"
+edition = "2021"
+license = "GPL-3.0"
+
+[dependencies]
+base64 = { version = "0.22", optional = true }
+byteorder = "1.5"
+env_logger = "0.11"
+libgssapi = { version = "0.9", optional = true }
+log = "0.4"
+reqwest = { version = "0.13", features = ["blocking", "json", "gzip"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+url = "2.5"
+usbsas-comm = { path = "../usbsas-comm" }
+usbsas-config = { path = "../usbsas-config" }
+usbsas-process = { path = "../usbsas-process" }
+usbsas-proto = { path = "../usbsas-proto" }
+usbsas-sandbox = { path = "../usbsas-sandbox" }
+usbsas-utils = { path = "../usbsas-utils" }
+
+[features]
+authkrb = ["base64", "libgssapi"]
+default = ["authkrb"]
+
+[[bin]]
+path = "src/bin/analyzer.rs"
+name = "usbsas-analyzer"
+
+[[bin]]
+path = "src/bin/uploader.rs"
+name = "usbsas-uploader"
+
+[[bin]]
+path = "src/bin/downloader.rs"
+name = "usbsas-downloader"
+
+[[bin]]
+path = "src/bin/jsonparser.rs"
+name = "usbsas-jsonparser"

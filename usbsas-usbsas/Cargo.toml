@@ -1,0 +1,71 @@
+[package]
+name = "usbsas-usbsas"
+description = "usbsas"
+version = "0.3.2"
+edition = "2021"
+license = "GPL-3.0"
+
+[dependencies]
+anyhow = "1.0"
+clap = "4.5"
+log = "0.4"
+nix = { version = "0.30", features = ["feature", "fs"] }
+serde_json = "1.0"
+sha2 = "0.10"
+thiserror = "2.0"
+time = { version = "0.3", features = ["macros"] }
+usbsas-comm = { path = "../usbsas-comm" }
+usbsas-config = { path = "../usbsas-config" }
+usbsas-mock = { path = "../usbsas-mock", optional = true }
+usbsas-process = { path = "../usbsas-process" }
+usbsas-proto = { path = "../usbsas-proto" }
+usbsas-sandbox = { path = "../usbsas-sandbox" }
+usbsas-utils = { path = "../usbsas-utils" }
+uuid = { version = "1.19", features = ["v4"] }
+
+[dev-dependencies]
+assert_cmd = "2.1"
+flate2 = { version = "1.1", features = ["zlib-rs"], default-features = false }
+hex-literal = "1.1"
+nix = { version = "0.30", features = ["process", "signal"] }
+reqwest = { version = "0.13", features = ["blocking"] }
+serde = { version = "1.0", features = ["derive"] }
+sha2 = "0.10"
+toml = "0.9"
+
+[features]
+mock = []
+integration-tests = []
+
+# cargo-deb
+[package.metadata.deb]
+name = "usbsas-server"
+maintainer = "usbsas"
+copyright = "usbsas"
+revision = "1"
+depends = "$auto"
+section = "utility"
+priority = "optional"
+maintainer-scripts = "debian/"
+triggers-file = "debian/triggers"
+systemd-units = { unit-name = "usbsas-server", enable = false }
+assets = [
+  ["target/release/usbsas-usbsas", "usr/libexec/", "755"],
+  ["target/release/usbsas-analyzer", "usr/libexec/", "755"],
+  ["target/release/usbsas-jsonparser", "usr/libexec/", "755"],
+  ["target/release/usbsas-cmdexec", "usr/libexec/", "755"],
+  ["target/release/usbsas-dev2scsi", "usr/libexec/", "755"],
+  ["target/release/usbsas-downloader", "usr/libexec/", "755"],
+  ["target/release/usbsas-files2fs", "usr/libexec/", "755"],
+  ["target/release/usbsas-files2tar", "usr/libexec/", "755"],
+  ["target/release/usbsas-fs2dev", "usr/libexec/", "755"],
+  ["target/release/usbsas-identifier", "usr/libexec/", "755"],
+  ["target/release/usbsas-scsi2files", "usr/libexec/", "755"],
+  ["target/release/usbsas-tar2files", "usr/libexec/", "755"],
+  ["target/release/usbsas-uploader", "usr/libexec/", "755"],
+  ["target/release/usbsas-usbdev", "usr/libexec/", "755"],
+  ["../config.example.toml", "etc/usbsas/config.toml", "644"],
+  ["assets/99-usbsas.rules", "etc/udev/rules.d/", "644"],
+  ["assets/usbsas.conf", "etc/modprobe.d/", "644"],
+]
+conf-files = ["/etc/usbsas/config.toml"]

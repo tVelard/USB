@@ -1,0 +1,16 @@
+[package]
+name = "usbsas-tar2files"
+version = "0.1.6"
+edition = "2021"
+license = "GPL-3.0"
+
+[dependencies]
+byteorder = "1.5"
+env_logger = "0.11"
+log = "0.4"
+tar = "0.4"
+thiserror = "2.0"
+usbsas-comm = { path = "../usbsas-comm" }
+usbsas-proto = { path = "../usbsas-proto" }
+usbsas-sandbox = { path = "../usbsas-sandbox" }
+usbsas-utils = { path = "../usbsas-utils" }

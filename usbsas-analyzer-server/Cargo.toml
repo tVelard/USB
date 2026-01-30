@@ -1,0 +1,37 @@
+[package]
+name = "usbsas-analyzer-server"
+description = "usbsas analyzer server (with clamav)"
+version = "0.2.3"
+edition = "2021"
+license = "GPL-3.0"
+
+[dependencies]
+actix-files = "0.6"
+actix-web = "4.12"
+clap = "4.5"
+env_logger = "0.11"
+futures = "0.3"
+log = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tar = "0.4"
+tempfile = "3.24"
+tokio = { version = "1.49", features = ["fs"] }
+uuid = { version = "1.19", features = ["v4"] }
+
+[features]
+integration-tests = []
+
+# cargo-deb
+[package.metadata.deb]
+maintainer = "usbsas"
+copyright = "usbsas"
+revision = "1"
+depends = "$auto, clamav-daemon, clamav-freshclam"
+section = "utility"
+priority = "optional"
+maintainer-scripts = "debian/"
+systemd-units = { enable = false }
+assets = [
+  ["target/release/usbsas-analyzer-server", "usr/bin/", "755"],
+]

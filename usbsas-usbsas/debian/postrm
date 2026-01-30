@@ -1,0 +1,18 @@
+#! /bin/sh
+set -e
+
+# Delete usbsas user, update initramfs and reload udev rules
+
+if [ "$1" = remove ]; then
+    echo "deleting usbsas user"
+    set +e
+    if id usbsas >/dev/null; then
+        set -e
+        userdel -r -f usbsas
+    fi
+
+    echo "reloading udev rules"
+    udevadm control --reload-rules
+fi
+
+#DEBHELPER#

@@ -1,0 +1,61 @@
+syntax = "proto3";
+package fs2dev;
+import "common.proto3";
+
+
+/* Requests */
+
+message RequestEnd {
+};
+
+message RequestDevSize {
+};
+
+message RequestWriteFs {
+};
+
+message RequestWipe {
+};
+
+message RequestLoadBitVec {
+  bytes chunk = 1;
+  bool last = 2;
+};
+
+message Request {
+  oneof msg {
+    RequestEnd End = 1;
+    RequestDevSize DevSize = 2;
+    RequestWriteFs WriteFs = 3;
+    RequestWipe wipe = 4;
+    RequestLoadBitVec LoadBitVec = 5;
+  }
+};
+
+
+
+/* Responses */
+message ResponseDevSize {
+  uint64 size = 1;
+};
+
+message ResponseWriteFs {
+};
+
+message ResponseWipe {
+};
+
+message ResponseLoadBitVec {
+};
+
+message Response {
+  oneof msg {
+    common.ResponseEnd End = 1;
+    common.ResponseError Error = 2;
+    ResponseDevSize DevSize = 3;
+    ResponseWriteFs WriteFs = 4;
+    ResponseWipe Wipe = 5;
+    ResponseLoadBitVec LoadBitVec = 6;
+    common.ResponseStatus Status = 7;
+  }
+};

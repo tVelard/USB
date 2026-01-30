@@ -1,0 +1,42 @@
+syntax = "proto3";
+package cmdexec;
+import "common.proto3";
+
+/* Requests */
+
+message RequestExec {
+};
+
+message RequestPostCopyExec {
+  common.OutFileType outfiletype = 1;
+};
+
+message RequestEnd {
+};
+
+message Request {
+  oneof msg {
+    RequestExec Exec = 1;
+    RequestPostCopyExec PostCopyExec = 2;
+    RequestEnd End = 3;
+  }
+};
+
+
+/* Response */
+
+message ResponseExec {
+}
+
+message ResponsePostCopyExec {
+}
+
+message Response {
+  oneof msg {
+    ResponseExec Exec = 1;
+    ResponsePostCopyExec PostCopyExec = 2;
+    common.ResponseStatus Status = 3;
+    common.ResponseEnd End = 4;
+    common.ResponseError Error = 5;
+  }
+};

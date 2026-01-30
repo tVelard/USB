@@ -1,0 +1,12 @@
+[package]
+name = "usbsas-mock"
+version = "0.1.3"
+edition = "2021"
+license = "GPL-3.0"
+
+[dependencies]
+log = "0.4"
+positioned-io2 = "0.3"
+thiserror = "2.0"
+usbsas-comm = { path = "../usbsas-comm" }
+usbsas-proto = { path = "../usbsas-proto" }

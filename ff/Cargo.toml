@@ -1,0 +1,12 @@
+[package]
+name = "ff"
+version = "0.1.2"
+edition = "2021"
+license = "GPL-3.0"
+
+[dependencies]
+time = "0.3"
+
+[build-dependencies]
+bindgen = "0.72"
+cc = "1.2"

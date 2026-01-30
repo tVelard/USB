@@ -1,0 +1,19 @@
+[package]
+name = "usbsas-sandbox"
+version = "0.2.0"
+edition = "2021"
+license = "GPL-3.0"
+
+[build-dependencies]
+cc = "1.2"
+
+[dependencies]
+landlock = "0.4"
+libc = "0.2"
+log = "0.4"
+procfs = { version = "0.18", default-features = false }
+syscallz = "0.17"
+thiserror = "2.0"
+
+[features]
+landlock-enforce = []

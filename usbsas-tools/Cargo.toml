@@ -1,0 +1,68 @@
+[package]
+name = "usbsas-tools"
+version = "0.2.0"
+edition = "2021"
+license = "GPL-3.0"
+description = "usbsas tools"
+
+[dependencies]
+bitvec = { version = "1.0", optional = true }
+clap = "4.5"
+env_logger = "0.11"
+fuse_mt = { version = "0.6", optional = true }
+indicatif = { version = "0.18", optional = true }
+libc = { version = "0.2", optional = true }
+log = "0.4"
+nix = { version = "0.30", optional = true, features = ["user"] }
+tempfile = { version = "3.24", optional = true }
+serde_json = { version = "1.0", optional = true}
+thiserror = "2.0"
+time = { version = "0.3", optional = true }
+usbsas-comm = { path = "../usbsas-comm" }
+usbsas-config = { path = "../usbsas-config", optional = true }
+usbsas-process = { path = "../usbsas-process" }
+usbsas-proto = { path = "../usbsas-proto" }
+usbsas-sandbox = { path = "../usbsas-sandbox" }
+usbsas-utils = { path = "../usbsas-utils", optional = true }
+
+[features]
+imager = ["indicatif", "tempfile", "usbsas-config", "usbsas-utils"]
+fswriter = ["bitvec"]
+fuse-mount = ["fuse_mt", "libc", "time", "nix"]
+net = ["serde_json"]
+default = ["imager", "fswriter", "fuse-mount", "net"]
+
+[[bin]]
+name = "usbsas-imager"
+path = "src/imager.rs"
+required-features = ["imager"]
+
+[[bin]]
+name = "usbsas-net"
+path = "src/net.rs"
+required-features = ["net"]
+
+[[bin]]
+name = "usbsas-fuse-mount"
+path = "src/fuse-mount.rs"
+required-features = ["fuse-mount"]
+
+[[bin]]
+name = "usbsas-fswriter"
+path = "src/fswriter.rs"
+required-features = ["fswriter"]
+
+# cargo-deb
+[package.metadata.deb]
+maintainer = "usbsas"
+copyright = "usbsas"
+revision = "1"
+depends = "$auto, usbsas-server, fuse3"
+section = "utility"
+priority = "optional"
+assets = [
+  ["target/release/usbsas-fuse-mount", "usr/bin/", "755"],
+  ["target/release/usbsas-imager", "usr/bin/", "755"],
+  ["target/release/usbsas-net", "usr/bin/", "755"],
+  ["target/release/usbsas-fswriter", "usr/bin/", "755"],
+]

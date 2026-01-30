@@ -1,0 +1,43 @@
+syntax = "proto3";
+package downloader;
+import "common.proto3";
+
+/* Requests */
+
+message RequestDownload {
+};
+
+message RequestArchiveInfos {
+  string path = 1;
+};
+
+message RequestEnd {
+};
+
+message Request {
+  oneof msg {
+    RequestDownload Download = 1;
+    RequestArchiveInfos ArchiveInfos = 2;
+    RequestEnd End = 3;
+  }
+};
+
+
+/* Response */
+
+message ResponseDownload {
+}
+
+message ResponseArchiveInfos {
+  uint64 size = 1;
+}
+
+message Response {
+  oneof msg {
+    ResponseDownload Download = 1;
+    common.ResponseStatus Status = 2;
+    ResponseArchiveInfos ArchiveInfos = 3;
+    common.ResponseEnd End = 4;
+    common.ResponseError Error = 5;
+  }
+};

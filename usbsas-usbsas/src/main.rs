@@ -156,8 +156,8 @@ fn main() -> Result<()> {
             fs::remove_file(&socket_path).expect("remove socket");
         };
         let listener = UnixListener::bind(&socket_path).context("bind")?;
-        // Set R+W for owner and group
-        fs::set_permissions(&socket_path, Permissions::from_mode(0o660))
+        // Set R+W for everyone (needed for usbsas-client user to connect)
+        fs::set_permissions(&socket_path, Permissions::from_mode(0o666))
             .context("set perms socket")?;
         let stream = match listener.incoming().next() {
             Some(Ok(stream)) => stream,

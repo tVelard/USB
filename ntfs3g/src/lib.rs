@@ -97,6 +97,31 @@ impl<T: Read + Write + Seek> Ntfs3g<T> {
         }
     }
 
+    /// Mount an existing NTFS file system
+    pub fn mount_existing(inner: T) -> Result<Self> {
+        let inner_box: Box<Box<dyn ReadWriteSeek>> = Box::new(Box::new(inner));
+        let priv_data = Box::into_raw(inner_box) as *mut c_void;
+
+        let dev_name = CString::new("").unwrap();
+
+        #[cfg(not(any(target_arch = "arm", target_arch = "aarch64")))]
+        let vol = unsafe { n3g_c::ntfs_mount(dev_name.as_ptr() as *mut i8, 0, priv_data) };
+        #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
+        let vol = unsafe { n3g_c::ntfs_mount(dev_name.as_ptr() as *mut u8, 0, priv_data) };
+
+        if vol.is_null() {
+            Err(Error::other(format!(
+                "ntfs3g ntfs_mount error (mount_existing) ({})",
+                Error::last_os_error()
+            )))
+        } else {
+            Ok(Ntfs3g {
+                vol,
+                inner_type: PhantomData,
+            })
+        }
+    }
+
     pub fn into_inner(self) -> Result<T> {
         let inner: Box<Box<T>> =
             unsafe { Box::from_raw((*(*self.vol).dev).d_private as *mut Box<T>) };

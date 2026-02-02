@@ -65,6 +65,10 @@ pub trait FSWrite<T> {
     ) -> Result<Self>
     where
         Self: Sized;
+    // Mount an existing filesystem in read/write mode (without formatting)
+    fn mount_existing(fs_file: T, sector_size: u64) -> Result<Self>
+    where
+        Self: Sized;
     fn newfile(&mut self, path: &str, timestamp: i64) -> Result<Box<dyn WriteSeek + '_>>;
     fn newdir(&mut self, path: &str, timestamp: i64) -> Result<()>;
     fn removefile(&mut self, path: &str) -> Result<()>;

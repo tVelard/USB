@@ -1,8 +1,7 @@
 //! ff bindings
 //!
 //! This crate can be used to read an already existing FAT file system or to
-//! write a new one. Modifying an already existing file system is (not yet ?)
-//! supported.
+//! write a new one. Modifying an already existing file system is supported.
 //!
 //! The struct `FatFs<T>` is a wrapper around ff's `FATFS` struct. It implements
 //! reading a file system when `T` is `Read` + `Seek`, and writing a file system
@@ -244,6 +243,24 @@ impl<T: Read + Write + Seek> FatFs<T> {
 
         if unsafe { ff_c::f_mount(&mut *fs, drive.as_ptr(), 1) } != ff_c::FRESULT_FR_OK {
             return Err(io::Error::other("ff f_mount error"));
+        }
+
+        Ok(FatFs {
+            inner: fs,
+            inner_type: PhantomData,
+        })
+    }
+
+    /// Mount an existing (ex)FAT filesystem on T
+    pub fn mount_existing(inner: T, sector_size: u32) -> Result<Self, io::Error> {
+        let inner_box: Box<Box<dyn WrapperFatFs>> =
+            Box::new(Box::new(WrapperReadWrite::new(inner, sector_size)));
+        let mut fs = Box::new(ff_c::FATFS::new());
+        fs.pdrv = Box::into_raw(inner_box) as *mut c_void;
+        let drive = str_to_utf16(DRIVE);
+
+        if unsafe { ff_c::f_mount(&mut *fs, drive.as_ptr(), 1) } != ff_c::FRESULT_FR_OK {
+            return Err(io::Error::other("ff f_mount error (mount_existing)"));
         }
 
         Ok(FatFs {

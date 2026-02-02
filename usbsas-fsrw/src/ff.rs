@@ -96,6 +96,16 @@ impl<T: Read + Write + Seek> FSWrite<T> for FatFsWriter<T> {
         })
     }
 
+    fn mount_existing(fs_file: T, sector_size: u64) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        log::trace!("mount_existing FAT/exFAT");
+        Ok(FatFsWriter {
+            fs: ff::FatFs::mount_existing(fs_file, u32::try_from(sector_size)?)?,
+        })
+    }
+
     fn newfile(&mut self, path: &str, _timestamp: i64) -> Result<Box<dyn WriteSeek + '_>> {
         log::trace!("new file {path}");
         Ok(Box::new(self.fs.new_file(path).map_err(|err| {

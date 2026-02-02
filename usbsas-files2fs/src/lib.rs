@@ -118,10 +118,15 @@ impl WaitFsInfosState {
     fn run(self, comm: &mut ComRpWriteDst) -> Result<State> {
         trace!("wait fs infos");
         let newstate = match comm.recv_req()? {
-            Msg::Init(fsinfos) => match self.mkfs(comm, fsinfos.dev_size, fsinfos.fstype) {
+            Msg::Init(fsinfos) => match self.init_fs(
+                comm,
+                fsinfos.dev_size,
+                fsinfos.fstype,
+                fsinfos.preserve_files,
+            ) {
                 Ok(fs) => State::WaitNewFile(WaitNewFileState { fs }),
                 Err(err) => {
-                    comm.error(format!("Error mkfs: {err}"))?;
+                    comm.error(format!("Error init fs: {err}"))?;
                     State::WaitEnd(WaitEndState {})
                 }
             },
@@ -139,16 +144,19 @@ impl WaitFsInfosState {
         Ok(newstate)
     }
 
-    fn mkfs(
+    fn init_fs(
         self,
         comm: &mut ComRpWriteDst,
         dev_size: u64,
         fstype: i32,
+        preserve_files: bool,
     ) -> Result<Box<dyn FSWrite<StreamSlice<SparseFile<File>>>>> {
         let out_fs_type =
             FsType::try_from(fstype).map_err(|err| Error::FSError(format!("{err}")))?;
 
-        log::debug!("mkfs dev_size: {dev_size}");
+        log::debug!(
+            "init_fs dev_size: {dev_size}, preserve_files: {preserve_files}"
+        );
 
         let fs_size = dev_size - (SECTOR_START * SECTOR_SIZE);
         if !fs_size.is_multiple_of(SECTOR_SIZE) {
@@ -176,44 +184,60 @@ impl WaitFsInfosState {
                 let file_slice =
                     StreamSlice::new(sparse_file, 0, (SECTOR_START + sector_count) * SECTOR_SIZE)?;
 
-                Box::new(ff::FatFsWriter::mkfs(
-                    file_slice,
-                    SECTOR_SIZE,
-                    sector_count,
-                    Some(out_fs_type),
-                )?)
+                if preserve_files {
+                    log::info!("Mounting existing FAT/exFAT filesystem (preserve_files=true)");
+                    Box::new(ff::FatFsWriter::mount_existing(file_slice, SECTOR_SIZE)?)
+                } else {
+                    Box::new(ff::FatFsWriter::mkfs(
+                        file_slice,
+                        SECTOR_SIZE,
+                        sector_count,
+                        Some(out_fs_type),
+                    )?)
+                }
             }
             FsType::Ntfs => {
-                // Write mbr before mkfs
-                sparse_file.seek(SeekFrom::Start(446))?;
-                let partition = usbsas_mbr::MbrPartitionEntry {
-                    boot_indicator: 0,
-                    start_head: 1,
-                    start_sector: 1,
-                    start_cylinder: 0,
-                    partition_type: 0x7,
-                    end_head: 0xfe,
-                    end_sector: 0x3f,
-                    end_cylinder: 0x2,
-                    start_in_lba: u32::try_from(SECTOR_START)?,
-                    size_in_lba: u32::try_from(sector_count)?,
-                };
-                usbsas_mbr::write_partition(&mut sparse_file, &partition)?;
-                sparse_file.seek(SeekFrom::Start(510))?;
-                sparse_file.write_all(&[0x55, 0xAA])?;
+                if preserve_files {
+                    // Mount existing NTFS filesystem without writing MBR
+                    log::info!("Mounting existing NTFS filesystem (preserve_files=true)");
+                    let file_slice = StreamSlice::new(
+                        sparse_file,
+                        SECTOR_START * SECTOR_SIZE,
+                        (SECTOR_START + sector_count) * SECTOR_SIZE,
+                    )?;
+                    Box::new(ntfs::NTFS3G::mount_existing(file_slice, SECTOR_SIZE)?)
+                } else {
+                    // Write mbr before mkfs
+                    sparse_file.seek(SeekFrom::Start(446))?;
+                    let partition = usbsas_mbr::MbrPartitionEntry {
+                        boot_indicator: 0,
+                        start_head: 1,
+                        start_sector: 1,
+                        start_cylinder: 0,
+                        partition_type: 0x7,
+                        end_head: 0xfe,
+                        end_sector: 0x3f,
+                        end_cylinder: 0x2,
+                        start_in_lba: u32::try_from(SECTOR_START)?,
+                        size_in_lba: u32::try_from(sector_count)?,
+                    };
+                    usbsas_mbr::write_partition(&mut sparse_file, &partition)?;
+                    sparse_file.seek(SeekFrom::Start(510))?;
+                    sparse_file.write_all(&[0x55, 0xAA])?;
 
-                let file_slice = StreamSlice::new(
-                    sparse_file,
-                    SECTOR_START * SECTOR_SIZE,
-                    (SECTOR_START + sector_count) * SECTOR_SIZE,
-                )?;
+                    let file_slice = StreamSlice::new(
+                        sparse_file,
+                        SECTOR_START * SECTOR_SIZE,
+                        (SECTOR_START + sector_count) * SECTOR_SIZE,
+                    )?;
 
-                Box::new(ntfs::NTFS3G::mkfs(
-                    file_slice,
-                    SECTOR_SIZE,
-                    sector_count,
-                    None,
-                )?)
+                    Box::new(ntfs::NTFS3G::mkfs(
+                        file_slice,
+                        SECTOR_SIZE,
+                        sector_count,
+                        None,
+                    )?)
+                }
             }
         };
 

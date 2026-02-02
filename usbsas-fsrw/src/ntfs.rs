@@ -26,6 +26,16 @@ impl<T: Read + Write + Seek> FSWrite<T> for NTFS3G<T> {
         })
     }
 
+    fn mount_existing(fs_file: T, _sector_size: u64) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        log::trace!("mount_existing NTFS");
+        Ok(NTFS3G {
+            volume: ntfs3g::Ntfs3g::mount_existing(fs_file)?,
+        })
+    }
+
     fn newfile(&mut self, path: &str, timestamp: i64) -> Result<Box<dyn WriteSeek + '_>> {
         log::trace!("new file {path}");
         let file: Box<dyn WriteSeek> = Box::new(

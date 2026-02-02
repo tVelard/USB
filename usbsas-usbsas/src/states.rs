@@ -943,7 +943,8 @@ impl RunState for WriteDstFileState {
                 children.files2fs.comm.init(proto::writedst::RequestInit {
                     dev_size,
                     fstype: fstype.into(),
-                    preserve_files: self.transfer.preserve_files,
+                    preserve_files: self.transfer.preserve_files
+                    ,
                 })?;
             } else {
                 unreachable!();

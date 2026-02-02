@@ -54,6 +54,7 @@ enum State {
     DevOpened(DevOpenedState),
     BitVecLoaded(BitVecLoadedState),
     Copying(CopyingState),
+    Reading(ReadingState),
     Wiping(WipingState),
     WaitEnd(WaitEndState),
     End,
@@ -67,6 +68,7 @@ impl State {
             State::BitVecLoaded(s) => s.run(comm),
             State::WaitEnd(s) => s.run(comm),
             State::Copying(s) => s.run(comm),
+            State::Reading(s) => s.run(comm),
             State::Wiping(s) => s.run(comm),
             State::End => Err(Error::State),
         }
@@ -97,6 +99,12 @@ struct CopyingState {
 struct WipingState {
     fs: File,
     mass_storage: MassStorage,
+}
+
+struct ReadingState {
+    fs: File,
+    mass_storage: MassStorage,
+    dev_size: u64,
 }
 
 struct WaitEndState;
@@ -155,7 +163,10 @@ impl InitState {
             return Ok(State::WaitEnd(WaitEndState));
         }
 
-        let fs = File::open(self.fs_fname)?;
+        let fs = std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(self.fs_fname)?;
 
         #[cfg(not(feature = "mock"))]
         let (device_file, device_fd) = {
@@ -293,6 +304,55 @@ impl WipingState {
     }
 }
 
+impl ReadingState {
+    fn run(mut self, comm: &mut ComRpFs2Dev) -> Result<State> {
+        trace!("reading state - reading device to file");
+        comm.readfs(proto::fs2dev::ResponseReadFs {})?;
+
+        let total_size = self.dev_size;
+        let mut current_size = 0u64;
+        let mut sector_index = 0u64;
+        let mut status_counter: u64 = 0;
+
+        // Read device content sector by sector and write to file
+        self.fs.rewind()?;
+
+        while current_size < total_size {
+            let remaining = total_size - current_size;
+            let read_size = if remaining > BUFFER_MAX_WRITE_SIZE {
+                BUFFER_MAX_WRITE_SIZE
+            } else {
+                remaining
+            };
+            let sector_count = read_size / SECTOR_SIZE;
+
+            let data = self.mass_storage.read_sectors(
+                sector_index,
+                sector_count,
+                SECTOR_SIZE as usize,
+            )?;
+
+            self.fs.write_all(&data)?;
+
+            current_size += read_size;
+            sector_index += sector_count;
+
+            status_counter += 1;
+            if status_counter.is_multiple_of(10) {
+                comm.status(current_size, total_size, false, Status::ReadSrc)?;
+            }
+        }
+
+        self.fs.flush()?;
+        comm.done(Status::ReadSrc)?;
+
+        Ok(State::DevOpened(DevOpenedState {
+            fs: self.fs,
+            mass_storage: self.mass_storage,
+        }))
+    }
+}
+
 impl DevOpenedState {
     fn run(self, comm: &mut ComRpFs2Dev) -> Result<State> {
         trace!("dev opened state");
@@ -307,6 +367,11 @@ impl DevOpenedState {
             Msg::Wipe(_) => State::Wiping(WipingState {
                 fs: self.fs,
                 mass_storage: self.mass_storage,
+            }),
+            Msg::ReadFs(msg) => State::Reading(ReadingState {
+                fs: self.fs,
+                mass_storage: self.mass_storage,
+                dev_size: msg.dev_size,
             }),
             Msg::End(_) => {
                 comm.end()?;

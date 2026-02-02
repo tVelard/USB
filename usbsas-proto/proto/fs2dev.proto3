@@ -22,6 +22,11 @@ message RequestLoadBitVec {
   bool last = 2;
 };
 
+// Read device content to file (for preserve_files feature)
+message RequestReadFs {
+  uint64 dev_size = 1;
+};
+
 message Request {
   oneof msg {
     RequestEnd End = 1;
@@ -29,6 +34,7 @@ message Request {
     RequestWriteFs WriteFs = 3;
     RequestWipe wipe = 4;
     RequestLoadBitVec LoadBitVec = 5;
+    RequestReadFs ReadFs = 6;
   }
 };
 
@@ -48,6 +54,9 @@ message ResponseWipe {
 message ResponseLoadBitVec {
 };
 
+message ResponseReadFs {
+};
+
 message Response {
   oneof msg {
     common.ResponseEnd End = 1;
@@ -57,5 +66,6 @@ message Response {
     ResponseWipe Wipe = 5;
     ResponseLoadBitVec LoadBitVec = 6;
     common.ResponseStatus Status = 7;
+    ResponseReadFs ReadFs = 8;
   }
 };

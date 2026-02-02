@@ -324,6 +324,9 @@ impl InitState {
         ) {
             log::info!("Init transfer from {src:?} to {dst:?} for {userid:?}");
 
+            // Extract preserve_files early for potential use below
+            let preserve_files = req.preserve_files.unwrap_or(false);
+
             // Get max size of destination
             let max_dst_size = if let Device::Usb(ref mut usbdev) = dst {
                 children
@@ -335,6 +338,25 @@ impl InitState {
                     .devsize(proto::fs2dev::RequestDevSize {})?
                     .size;
                 usbdev.dev_size = Some(dev_size);
+
+                // If preserve_files is true, read the destination USB content into the .img file
+                // This allows files2fs to mount the existing filesystem
+                if preserve_files {
+                    log::info!("Reading destination USB content for preserve_files mode");
+                    children
+                        .fs2dev
+                        .comm
+                        .readfs(proto::fs2dev::RequestReadFs { dev_size })?;
+                    // Forward status updates to client
+                    loop {
+                        let status = children.fs2dev.comm.recv_status()?;
+                        comm.status(status.current, status.total, status.done, Status::ReadSrc)?;
+                        if status.done {
+                            break;
+                        }
+                    }
+                }
+
                 // XXX be more precise, arbitrary 95% to keep space for filesystem
                 Some(dev_size * 95 / 100)
             } else {
@@ -367,7 +389,7 @@ impl InitState {
                 analyze,
                 files: TransferFiles::new(),
                 analyze_report: None,
-                preserve_files: req.preserve_files.unwrap_or(false),
+                preserve_files,
             };
 
             let state = match transfer.src {

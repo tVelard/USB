@@ -9,10 +9,12 @@ pub fn seccomp(
     device_fd: Option<RawFd>,
 ) -> Result<()> {
     let mut fds_read = vec![fd_read];
+    let mut fds_write = vec![fd_write];
     if let Some(fd) = out_fs_fd {
         fds_read.push(fd);
+        fds_write.push(fd);  // Also allow write for preserve_files feature
     }
-    let mut ctx = seccomp::new_context_with_common_rules(fds_read, vec![fd_write])?;
+    let mut ctx = seccomp::new_context_with_common_rules(fds_read, fds_write)?;
 
     if let Some(fd) = out_fs_fd {
         // Allow lseek on out_fs

@@ -347,10 +347,10 @@ impl InitState {
                         .fs2dev
                         .comm
                         .readfs(proto::fs2dev::RequestReadFs { dev_size })?;
-                    // Forward status updates to client
+                    // Wait for readfs to complete without forwarding status to client
+                    // (client is still waiting for InitTransfer response)
                     loop {
                         let status = children.fs2dev.comm.recv_status()?;
-                        comm.status(status.current, status.total, status.done, Status::ReadSrc)?;
                         if status.done {
                             break;
                         }

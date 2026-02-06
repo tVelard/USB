@@ -324,7 +324,7 @@ impl InitState {
         ) {
             log::info!("Init transfer from {src:?} to {dst:?} for {userid:?}");
 
-            // Extract preserve_files early for potential use below
+            // Extract preserve_files for compatibility (currently ignored in implementation)
             let preserve_files = req.preserve_files.unwrap_or(false);
 
             // Get max size of destination
@@ -339,8 +339,6 @@ impl InitState {
                     .size;
                 usbdev.dev_size = Some(dev_size);
 
-                // If preserve_files is true, read the destination USB content into the .img file
-                // This allows files2fs to mount the existing filesystem
                 // XXX be more precise, arbitrary 95% to keep space for filesystem
                 Some(dev_size * 95 / 100)
             } else {
@@ -575,16 +573,9 @@ impl RunState for FileSelectionState {
         }
 
         if let Some(space) = self.config.available_space {
-            let needed = if self.transfer.preserve_files {
-                // In preserve_files mode, the .img file stores the full destination
-                // device content (dev_size) plus we need space for the source tar
-                if let Device::Usb(ref usbdev) = self.transfer.dst {
-                    let dev_size = usbdev.dev_size.unwrap_or(0);
-                    dev_size + selected_size
-                } else {
-                    selected_size
-                }
-            } else if self.transfer.analyze || matches!(self.transfer.dst, Device::Usb(_)) {
+            // Note: preserve_files no longer affects space calculation since we don't read
+            // the entire USB device anymore
+            let needed = if self.transfer.analyze || matches!(self.transfer.dst, Device::Usb(_)) {
                 2 * selected_size
             } else {
                 selected_size
@@ -957,26 +948,12 @@ impl RunState for WriteDstFileState {
     fn run(mut self, comm: &mut impl ProtoRespUsbsas, children: &mut Children) -> Result<State> {
         if let Device::Usb(ref usbdev) = self.transfer.dst {
             if let (Some(dev_size), Some(fstype)) = (usbdev.dev_size, self.transfer.outfstype) {
-                // If preserve_files, read destination USB content into .img file
-                // before files2fs mounts it
-                if self.transfer.preserve_files {
-                    log::info!("Reading destination USB content for preserve_files mode");
-                    children
-                        .fs2dev
-                        .comm
-                        .readfs(proto::fs2dev::RequestReadFs { dev_size })?;
-                    loop {
-                        let status = children.fs2dev.comm.recv_status()?;
-                        comm.status(status.current, status.total, status.done, Status::ReadSrc)?;
-                        if status.done {
-                            break;
-                        }
-                    }
-                }
+                // Note: preserve_files parameter is kept for compatibility but ignored
+                // to avoid reading the entire USB device which causes timeout issues
                 children.files2fs.comm.init(proto::writedst::RequestInit {
                     dev_size,
                     fstype: fstype.into(),
-                    preserve_files: self.transfer.preserve_files,
+                    preserve_files: false,
                 })?;
             } else {
                 unreachable!();

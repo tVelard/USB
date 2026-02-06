@@ -472,7 +472,7 @@ impl Fs2Dev {
                 Ok(state) => state,
                 Err(err) => {
                     error!("state run error: {err}, waiting end");
-                    comm.error("bad request")?;
+                    comm.error(format!("{err}"))?;
                     State::WaitEnd(WaitEndState {})
                 }
             };

@@ -575,10 +575,21 @@ impl RunState for FileSelectionState {
         }
 
         if let Some(space) = self.config.available_space {
-            if ((self.transfer.analyze || matches!(self.transfer.dst, Device::Usb(_)))
-                && 2 * selected_size > space)
-                || selected_size > space
-            {
+            let needed = if self.transfer.preserve_files {
+                // In preserve_files mode, the .img file stores the full destination
+                // device content (dev_size) plus we need space for the source tar
+                if let Device::Usb(ref usbdev) = self.transfer.dst {
+                    let dev_size = usbdev.dev_size.unwrap_or(0);
+                    dev_size + selected_size
+                } else {
+                    selected_size
+                }
+            } else if self.transfer.analyze || matches!(self.transfer.dst, Device::Usb(_)) {
+                2 * selected_size
+            } else {
+                selected_size
+            };
+            if needed > space {
                 bail!("Not enough space");
             }
         };

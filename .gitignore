@@ -20,6 +20,9 @@ proto3_pb2.py
 ### python
 *.pyc
 
+### notes
+NOTES.md
+
 ### latex
 *.aux
 *.dvi

@@ -573,9 +573,15 @@ impl RunState for FileSelectionState {
         }
 
         if let Some(space) = self.config.available_space {
-            // Note: preserve_files no longer affects space calculation since we don't read
-            // the entire USB device anymore
-            let needed = if self.transfer.analyze || matches!(self.transfer.dst, Device::Usb(_)) {
+            let needed = if self.transfer.preserve_files {
+                // In preserve_files mode, the .img file stores the full destination
+                // device content (dev_size) plus we need space for the source tar
+                if let Device::Usb(ref usbdev) = self.transfer.dst {
+                    usbdev.dev_size.unwrap_or(0) + selected_size
+                } else {
+                    selected_size
+                }
+            } else if self.transfer.analyze || matches!(self.transfer.dst, Device::Usb(_)) {
                 2 * selected_size
             } else {
                 selected_size
@@ -948,12 +954,26 @@ impl RunState for WriteDstFileState {
     fn run(mut self, comm: &mut impl ProtoRespUsbsas, children: &mut Children) -> Result<State> {
         if let Device::Usb(ref usbdev) = self.transfer.dst {
             if let (Some(dev_size), Some(fstype)) = (usbdev.dev_size, self.transfer.outfstype) {
-                // Note: preserve_files parameter is kept for compatibility but ignored
-                // to avoid reading the entire USB device which causes timeout issues
+                // If preserve_files, read destination USB content into .img file
+                // before files2fs mounts the existing filesystem
+                if self.transfer.preserve_files {
+                    log::info!("Reading destination USB content for preserve_files mode");
+                    children
+                        .fs2dev
+                        .comm
+                        .readfs(proto::fs2dev::RequestReadFs { dev_size })?;
+                    loop {
+                        let status = children.fs2dev.comm.recv_status()?;
+                        comm.status(status.current, status.total, status.done, Status::ReadSrc)?;
+                        if status.done {
+                            break;
+                        }
+                    }
+                }
                 children.files2fs.comm.init(proto::writedst::RequestInit {
                     dev_size,
                     fstype: fstype.into(),
-                    preserve_files: false,
+                    preserve_files: self.transfer.preserve_files,
                 })?;
             } else {
                 unreachable!();

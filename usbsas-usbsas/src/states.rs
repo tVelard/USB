@@ -572,23 +572,19 @@ impl RunState for FileSelectionState {
             bail!("Selected files size is larger than destination size, aborting transfer");
         }
 
-        if let Some(space) = self.config.available_space {
-            let needed = if self.transfer.preserve_files {
-                // preserve_files: .tar (selected_size) + .img (dev_size)
-                let dev_size = match &self.transfer.dst {
-                    Device::Usb(usb) => usb.dev_size.unwrap_or(0),
-                    _ => 0,
+        if !self.transfer.preserve_files {
+            if let Some(space) = self.config.available_space {
+                let needed = if self.transfer.analyze || matches!(self.transfer.dst, Device::Usb(_))
+                {
+                    2 * selected_size
+                } else {
+                    selected_size
                 };
-                selected_size + dev_size
-            } else if self.transfer.analyze || matches!(self.transfer.dst, Device::Usb(_)) {
-                2 * selected_size
-            } else {
-                selected_size
-            };
-            if needed > space {
-                bail!("Not enough space");
+                if needed > space {
+                    bail!("Not enough space");
+                }
             }
-        };
+        }
 
         self.transfer.selected_size = Some(selected_size);
 

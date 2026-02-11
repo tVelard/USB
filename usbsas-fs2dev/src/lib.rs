@@ -315,6 +315,7 @@ impl ReadingState {
         let mut status_counter: u64 = 0;
 
         // Read device content sector by sector and write to file
+        // Skip all-zero chunks to keep the .img file sparse (saves disk space)
         self.fs.rewind()?;
 
         while current_size < total_size {
@@ -332,7 +333,12 @@ impl ReadingState {
                 SECTOR_SIZE as usize,
             )?;
 
-            self.fs.write_all(&data)?;
+            if data.iter().all(|&b| b == 0) {
+                // Skip zero chunks: seek past them to keep file sparse
+                self.fs.seek(SeekFrom::Current(read_size as i64))?;
+            } else {
+                self.fs.write_all(&data)?;
+            }
 
             current_size += read_size;
             sector_index += sector_count;

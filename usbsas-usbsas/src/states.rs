@@ -573,15 +573,7 @@ impl RunState for FileSelectionState {
         }
 
         if let Some(space) = self.config.available_space {
-            let needed = if self.transfer.preserve_files {
-                // In preserve_files mode, the .img file stores the full destination
-                // device content (dev_size) plus we need space for the source tar
-                if let Device::Usb(ref usbdev) = self.transfer.dst {
-                    usbdev.dev_size.unwrap_or(0) + selected_size
-                } else {
-                    selected_size
-                }
-            } else if self.transfer.analyze || matches!(self.transfer.dst, Device::Usb(_)) {
+            let needed = if self.transfer.analyze || matches!(self.transfer.dst, Device::Usb(_)) {
                 2 * selected_size
             } else {
                 selected_size

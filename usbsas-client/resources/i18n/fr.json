@@ -60,5 +60,6 @@
     "tools": "Outils",
     "usbsas": "sasusb",
     "loading": "Chargement",
-    "preserve_file": "Préserver les fichiers de la destination lors du transfert"
+    "preserve_file": "Conserver les fichiers existants",
+    "preserve_file_desc": "Si coché, la clé USB destination ne sera pas formatée, les fichiers existants seront conservés"
 }

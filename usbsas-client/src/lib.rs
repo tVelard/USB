@@ -282,7 +282,7 @@ impl GUI {
                 session_id,
                 fullscreen: *matches.get_one::<bool>("fullscreen").unwrap_or(&false),
                 socket_path,
-                preserve_file: false, //Initialisation de la variable booléenne, par défaut formatter
+                preserve_file: true,
             },
             Task::none(),
         )

@@ -59,5 +59,6 @@
     "tools": "Tools",
     "usbsas": "usbsas",
     "loading": "Loading",
-    "preserve_file": "Preserve file while transfer"
+    "preserve_file": "Keep existing files",
+    "preserve_file_desc": "If checked, the destination USB drive will not be formatted, existing files will be preserved"
 }

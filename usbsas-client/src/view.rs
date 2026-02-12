@@ -519,40 +519,81 @@ impl GUI {
                         );
                     }
                 }
-                Container::new(
-                    Column::new()
-                        .push(
-                            Row::new()
-                                .push(
-                                    text("Source")
-                                        .size(HEADER_SIZE)
-                                        .width(Length::Fill)
-                                        .align_x(Alignment::Center),
-                                )
-                                .push(
-                                    Space::new()
-                                        .width(Length::Fixed(10.0))
-                                        .height(Length::Shrink),
-                                )
-                                .push(
-                                    text("Destination")
-                                        .size(HEADER_SIZE)
-                                        .width(Length::Fill)
-                                        .align_x(Alignment::Center),
-                                ),
-                        )
+                // Check if destination is a USB device (to show preserve_files option)
+                let dst_is_usb = self
+                    .dst_id
+                    .and_then(|id| self.devices.get(&id))
+                    .is_some_and(|dev| matches!(dev, Device::Usb(_)));
+
+                let mut devselect_col = Column::new()
+                    .push(
+                        Row::new()
+                            .push(
+                                text("Source")
+                                    .size(HEADER_SIZE)
+                                    .width(Length::Fill)
+                                    .align_x(Alignment::Center),
+                            )
+                            .push(
+                                Space::new()
+                                    .width(Length::Fixed(10.0))
+                                    .height(Length::Shrink),
+                            )
+                            .push(
+                                text("Destination")
+                                    .size(HEADER_SIZE)
+                                    .width(Length::Fill)
+                                    .align_x(Alignment::Center),
+                            ),
+                    )
+                    .push(Space::new().width(Length::Fill).height(Length::Fixed(20.0)))
+                    .push(
+                        Row::new()
+                            .push(scrollable(src_devices.width(Length::Fill)))
+                            .push(
+                                Space::new()
+                                    .width(Length::Fixed(10.0))
+                                    .height(Length::Shrink),
+                            )
+                            .push(scrollable(dst_devices.width(Length::Fill))),
+                    );
+
+                if dst_is_usb {
+                    devselect_col = devselect_col
                         .push(Space::new().width(Length::Fill).height(Length::Fixed(20.0)))
                         .push(
+                            Container::new(
+                                Space::new().width(Length::Fill).height(Length::Fixed(1.0)),
+                            )
+                            .style(container::dark),
+                        )
+                        .push(Space::new().width(Length::Fill).height(Length::Fixed(15.0)))
+                        .push(
                             Row::new()
-                                .push(scrollable(src_devices.width(Length::Fill)))
+                                .push(Space::new().width(Length::Fill).height(Length::Shrink))
                                 .push(
-                                    Space::new()
-                                        .width(Length::Fixed(10.0))
-                                        .height(Length::Shrink),
+                                    Column::new()
+                                        .push(
+                                            Checkbox::new(self.preserve_file)
+                                                .label(self.i18n_txt("preserve_file"))
+                                                .on_toggle(Message::TogglePreserveExisting)
+                                                .text_size(TXT_SIZE),
+                                        )
+                                        .push(Space::new().width(Length::Fill).height(Length::Fixed(5.0)))
+                                        .push(
+                                            text(self.i18n_txt("preserve_file_desc"))
+                                                .size(OPT_SIZE)
+                                                .color(Color::from_rgb(0.4, 0.4, 0.4)),
+                                        )
+                                        .align_x(Alignment::Center),
                                 )
-                                .push(scrollable(dst_devices.width(Length::Fill))),
-                        ),
-                )
+                                .push(Space::new().width(Length::Fill).height(Length::Shrink))
+                                .align_y(Alignment::Center),
+                        )
+                        .push(Space::new().width(Length::Fill).height(Length::Fixed(10.0)));
+                }
+
+                Container::new(devselect_col)
             }
             State::PartSelect(parts) => {
                 let col = Column::new()
@@ -1093,16 +1134,7 @@ impl GUI {
                             PickList::new(FSTYPES, Some(self.fstype), Message::FsTypeSelect)
                                 .text_size(OPT_SIZE),
                         )
-                        .push(   // rajoute de l'espace dans le menu déroulant
-                            Space::new()
-                                .width(Length::Fixed(20.0))
-                                .height(Length::Fixed(OPT_SIZE)),
-                        )
-                        .push(
-                            Checkbox::new(self.preserve_file)
-                            .on_toggle(Message::TogglePreserveExisting)
-                            .text_size(OPT_SIZE),
-                        );
+                        ;
                 };
             };
         }
